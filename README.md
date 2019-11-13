@@ -5,4 +5,5 @@ Dependencies:
 - kustomize
 
 To verify in local minikube installation
+
 ```skaffold dev```
