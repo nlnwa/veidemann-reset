@@ -88,5 +88,7 @@ func main() {
 	err = rethinkdb.NewClient(rethinkdbOptions).Clean(tables)
 	if err != nil {
 		log.Fatalf("failed to reset database: %s\n", err.Error())
+	} else {
+		log.Printf("Veidemann reset completed successfully")
 	}
 }
