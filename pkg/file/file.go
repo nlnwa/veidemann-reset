@@ -3,6 +3,7 @@ package file
 import (
 	"io/ioutil"
 	"log"
+	"path"
 	"os"
 )
 
@@ -26,9 +27,9 @@ func (f DirectoryCleaner) RemoveFiles() {
 		log.Printf("removing all files from directory: %s\n", directory)
 
 		for _, file := range files {
-			err := os.Remove(file.Name())
+			err := os.Remove(path.Join(directory,file.Name()))
 			if err != nil {
-				log.Printf("failed to delete file: %s\n", file.Name())
+				log.Printf("failed to delete file: %s %s\n", file.Name(), err.Error())
 				continue
 			}
 		}
