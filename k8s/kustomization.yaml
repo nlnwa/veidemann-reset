@@ -10,4 +10,4 @@ resources:
 configMapGenerator:
   - name: veidemann-reset-env
     literals:
-      - RETHINKDB_HOST=local-rethinkdb-proxy
+      - RETHINKDB_HOST=rethinkdb-proxy
