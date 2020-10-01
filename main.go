@@ -30,7 +30,6 @@ func main() {
 
 	tables := map[string][]string{
 		"veidemann": {
-			"crawl_host_group",
 			"crawl_log",
 			"crawled_content",
 			"events",
