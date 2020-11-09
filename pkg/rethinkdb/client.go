@@ -3,7 +3,6 @@ package rethinkdb
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	r "gopkg.in/rethinkdb/rethinkdb-go.v5"
 )
 
@@ -60,7 +59,7 @@ func newClient(options ...ConnectOption) *Client {
 func (db *Client) Connect() error {
 	var err error
 	if db.Session, err = r.Connect(db.connectOpts); err != nil {
-		return errors.Wrap(err, "failed to connect to database")
+		return fmt.Errorf( "failed to connect to database: %w", err)
 	} else {
 		return nil
 	}
@@ -68,7 +67,7 @@ func (db *Client) Connect() error {
 
 func (db *Client) Disconnect() error {
 	if err := db.Session.Close(); err != nil {
-		return errors.Wrap(err, "failed to disconnect from database")
+		return fmt.Errorf("failed to disconnect from database: %w", err)
 	} else {
 		return nil
 	}
@@ -76,7 +75,7 @@ func (db *Client) Disconnect() error {
 
 func (db *Client) Get(table string, id string, value interface{}) error {
 	if cursor, err := r.Table(table).Get(id).Run(db.Session); err != nil {
-		return errors.Wrapf(err, "failed to get document (id: %s) in table: %s", id, table)
+		return fmt.Errorf("failed to get document %s in table %s: %w", id, table, err)
 	} else {
 		if err = cursor.One(&value); err != nil {
 			return err
@@ -94,7 +93,7 @@ func (db *Client) DeleteTable(database string, table string) error {
 	}).Run(db.Session)
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to delete documents in table: %s", table)
+		return fmt.Errorf( "failed to delete documents in table %s: %w", table, err)
 	}
 
 	return nil
