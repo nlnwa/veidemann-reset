@@ -24,7 +24,6 @@ func main() {
 		"/warcs",
 		"/validwarcs",
 		"/invalidwarcs",
-		"/delivery",
 		"/backup/oos",
 	}
 
@@ -34,16 +33,10 @@ func main() {
 			"crawled_content",
 			"events",
 			"executions",
-			"extracted_text",
 			"job_executions",
-			"locks",
 			"page_log",
 			"storage_ref",
 			"uri_queue",
-		},
-		"report": {
-			"invalid_warcs",
-			"valid_warcs",
 		},
 	}
 
