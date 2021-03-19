@@ -11,15 +11,6 @@ spec:
         - name: warcs
           persistentVolumeClaim:
             claimName: veidemann-warcs
-        - name: validwarcs
-          persistentVolumeClaim:
-            claimName: veidemann-validwarcs
-        - name: invalidwarcs
-          persistentVolumeClaim:
-            claimName: veidemann-invalidwarcs
-        - name: delivery
-          persistentVolumeClaim:
-            claimName: veidemann-delivery
         - name: backup
           persistentVolumeClaim:
             claimName: veidemann-backup
@@ -28,13 +19,14 @@ spec:
           image: veidemann-reset
           volumeMounts:
             - name: warcs
+              subPath: warcs
               mountPath: /warcs
-            - name: validwarcs
+            - name: warcs
+              subPath: validwarcs
               mountPath: /validwarcs
-            - name: invalidwarcs
+            - name: warcs
+              subPath: invalidwarcs
               mountPath: /invalidwarcs
-            - name: delivery
-              mountPath: /delivery
             - name: backup
               mountPath: /backup
           envFrom:
