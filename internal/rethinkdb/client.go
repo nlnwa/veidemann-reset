@@ -2,8 +2,9 @@ package rethinkdb
 
 import (
 	"fmt"
+	"log"
 
-	r "gopkg.in/rethinkdb/rethinkdb-go.v5"
+	r "gopkg.in/rethinkdb/rethinkdb-go.v6"
 )
 
 type Options struct {
@@ -59,7 +60,7 @@ func newClient(options ...ConnectOption) *Client {
 func (db *Client) Connect() error {
 	var err error
 	if db.Session, err = r.Connect(db.connectOpts); err != nil {
-		return fmt.Errorf( "failed to connect to database: %w", err)
+		return fmt.Errorf("failed to connect to database: %w", err)
 	} else {
 		return nil
 	}
@@ -93,8 +94,21 @@ func (db *Client) DeleteTable(database string, table string) error {
 	}).Run(db.Session)
 
 	if err != nil {
-		return fmt.Errorf( "failed to delete documents in table %s: %w", table, err)
+		return fmt.Errorf("failed to delete documents in table %s: %w", table, err)
 	}
 
 	return nil
+}
+
+func (db *Client) Clean(laundry map[string][]string) {
+	for database, tables := range laundry {
+		for _, table := range tables {
+			log.Printf("Removing all documents from table: %s.%s\n", database, table)
+			err := db.DeleteTable(database, table)
+			if err != nil {
+				log.Printf(err.Error())
+				continue
+			}
+		}
+	}
 }

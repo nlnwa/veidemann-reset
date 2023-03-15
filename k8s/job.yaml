@@ -17,7 +17,8 @@ spec:
             claimName: veidemann-backup
       containers:
         - name: veidemann-reset
-          image: veidemann-reset
+          image: ghcr.io/nlnwa/veidemann-reset:main
+          imagePullPolicy: Always
           volumeMounts:
             - name: warcs
               subPath: warcs

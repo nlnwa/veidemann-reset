@@ -1,23 +1,30 @@
-FROM docker.io/golang:latest as golang
+FROM docker.io/golang:1.19 as golang
 
 WORKDIR /build
 
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
 COPY . .
 
-RUN mkdir -p /out
-
-# Cache builds without version info
-RUN go build -mod readonly -o /out/veidemann-reset -ldflags "-s -w"
+# Cache build without version info
+# -trimpath remove file system paths from executable
+# -ldflags arguments passed to go tool link:
+#   -s disable symbol table
+#   -w disable DWARF generation
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod readonly -trimpath -ldflags "-s -w"
 
 ARG VERSION
-RUN go build -mod readonly -o /out/veidemann-reset \
-    -ldflags "-s -w -X github.com/nlnwa/veidemann-reset/pkg/version.Version=${VERSION:-$(git describe --tags --always)}"
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod readonly -trimpath \
+    -ldflags "-s -w -X github.com/nlnwa/veidemann-reset/internal/version.Version=${VERSION:-$(git describe --tags --always)}"
 
 
-FROM gcr.io/distroless/base
+FROM gcr.io/distroless/base-debian11
 
 COPY LICENSE /LICENSE
 
-COPY --from=golang /out /out
+COPY --from=golang /build/veidemann-reset /veidemann-reset
 
-ENTRYPOINT ["/out/veidemann-reset"]
+ENTRYPOINT ["/veidemann-reset"]

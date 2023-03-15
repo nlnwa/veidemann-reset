@@ -2,9 +2,6 @@ kind: Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 namespace: veidemann
 
-commonLabels:
-  app.kubernetes.io/name: veidemann-reset
-
 resources:
   - job.yaml
 
@@ -12,3 +9,6 @@ configMapGenerator:
   - name: veidemann-reset-env
     literals:
       - RETHINKDB_HOST=rethinkdb-proxy
+      - REDIS_HOST=redis-master
+      - SCYLLA_HOSTS=scylla-client
+      - SCYLLA_KEYSPACE=v7n_v3_dev

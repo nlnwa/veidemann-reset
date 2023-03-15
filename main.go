@@ -4,9 +4,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/nlnwa/veidemann-reset/pkg/file"
-	"github.com/nlnwa/veidemann-reset/pkg/rethinkdb"
-	"github.com/nlnwa/veidemann-reset/pkg/version"
+	"github.com/nlnwa/veidemann-reset/internal/file"
+	"github.com/nlnwa/veidemann-reset/internal/redis"
+	"github.com/nlnwa/veidemann-reset/internal/rethinkdb"
+	"github.com/nlnwa/veidemann-reset/internal/scylla"
+	"github.com/nlnwa/veidemann-reset/internal/version"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -20,6 +22,12 @@ func main() {
 	rethinkdbHost := "localhost"
 	rethinkdbPort := 28015
 
+	redisHost := "redis-master"
+	redisPort := 6379
+
+	scyllaHosts := []string{"scylla-client"}
+	scyllaKeyspace := "v7n_v3_dev"
+
 	directories := []string{
 		"/warcs",
 		"/validwarcs",
@@ -29,13 +37,10 @@ func main() {
 
 	tables := map[string][]string{
 		"veidemann": {
-			"crawl_log",
 			"crawled_content",
 			"events",
 			"executions",
 			"job_executions",
-			"page_log",
-			"storage_ref",
 			"uri_queue",
 		},
 	}
@@ -46,16 +51,22 @@ func main() {
 	flag.StringVar(&rethinkdbUser, "rethinkdb-user", rethinkdbUser, "RethinkDb user")
 	flag.StringVar(&rethinkdbPassword, "rethinkdb-password", rethinkdbPassword, "RethinkDb password")
 
+	flag.StringVar(&redisHost, "redis-host", redisHost, "Redis host")
+	flag.IntVar(&redisPort, "redis-port", redisPort, "Redis port")
+
+	flag.StringSliceVar(&scyllaHosts, "scylla-hosts", scyllaHosts, "List of db hosts")
+	flag.StringVar(&scyllaKeyspace, "scylla-keyspace", scyllaKeyspace, "Name of keyspace")
+
 	flag.StringSliceVar(&directories, "directories", directories, "directories to clean")
 
 	flag.Parse()
 
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	viper.AutomaticEnv()
 	err := viper.BindPFlags(flag.CommandLine)
 	if err != nil {
 		log.Fatal(err)
 	}
-	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-	viper.AutomaticEnv()
 
 	rethinkdbUser = viper.GetString("rethinkdb-user")
 	rethinkdbPassword = viper.GetString("rethinkdb-password")
@@ -71,16 +82,44 @@ func main() {
 		Password: rethinkdbPassword,
 	}
 
+	redisHost = viper.GetString("redis-host")
+	redisPort = viper.GetInt("redis-port")
+
+	scyllaHosts = viper.GetStringSlice("scylla-hosts")
+	scyllaKeyspace = viper.GetString("scylla-keyspace")
+
 	directories = viper.GetStringSlice("directories")
 
 	log.Printf("Veidemann reset, version: %s\n", version.Version)
 
+	// Delete files
 	file.NewDirectoryCleaner(directories).RemoveFiles()
 
-	err = rethinkdb.NewClient(rethinkdbOptions).Clean(tables)
+	// Empty RethinkDB tables
+	rethinkClient := rethinkdb.NewClient(rethinkdbOptions)
+	err = rethinkClient.Connect()
 	if err != nil {
-		log.Fatalf("failed to reset database: %s\n", err.Error())
-	} else {
-		log.Printf("Veidemann reset completed successfully")
+		panic(err)
 	}
+	defer rethinkClient.Disconnect()
+	rethinkClient.Clean(tables)
+
+	// Flush redis
+	redisClient, err := redis.NewClient(redisHost, redisPort)
+	if err != nil {
+		panic(err)
+	}
+	defer redisClient.Close()
+	redisClient.Flush()
+
+	// Drop scylla keyspace
+	scyllaClient := scylla.NewClient(scyllaHosts...)
+	err = scyllaClient.Connect()
+	if err != nil {
+		panic(err)
+	}
+	defer scyllaClient.Disconnect()
+	scyllaClient.Drop(scyllaKeyspace)
+
+	log.Printf("Veidemann reset completed successfully")
 }
