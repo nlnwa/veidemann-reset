@@ -42,5 +42,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
+          build-args:
+            - VERSION=${{ steps.meta.outputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
